@@ -1,0 +1,15 @@
+# Ignorar el entorno virtual de Python
+venv/
+
+# Ignorar el archivo de variables de entorno (¡MUY IMPORTANTE!)
+.env
+
+# Ignorar la base de datos local de SQLite
+mi_base.db
+
+# Ignorar carpetas de caché de Python
+__pycache__/
+*.pyc
+
+# Ignorar archivos de caché de VS Code
+.vscode/

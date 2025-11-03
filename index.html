@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-M">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat con Agente SQL</title>
+    <!-- 1. Cargar Tailwind CSS (para los estilos) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Un pequeño estilo para el scrollbar */
+        #chat-window::-webkit-scrollbar { width: 4px; }
+        #chat-window::-webkit-scrollbar-thumb { background-color: #4B5563; border-radius: 20px; }
+        .chat-bubble { max-width: 80%; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col items-center justify-center h-full p-4 font-sans">
+
+    <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
+        
+        <!-- Cabecera -->
+        <header class="border-b border-gray-700 p-4">
+            <h1 class="text-2xl font-bold text-center text-white">Agente Analista de Datos</h1>
+            <p class="text-sm text-center text-indigo-400">Pregúntame sobre la base de datos (ventas)</p>
+        </header>
+
+        <!-- 2. Ventana de Chat (Aquí irán los mensajes) -->
+        <div id="chat-window" class="flex-1 p-4 space-y-4 overflow-y-auto">
+            <!-- Mensaje de bienvenida -->
+            <div class="flex justify-start">
+                <div class="bg-gray-700 rounded-lg p-3 chat-bubble">
+                    <p class="font-bold text-indigo-300">Agente AI</p>
+                    <p>¡Hola! Estoy conectado a la base de datos `ventas`. ¿Qué te gustaría saber?</p>
+                </div>
+            </div>
+            <!-- Los mensajes del chat se añadirán aquí -->
+        </div>
+
+        <!-- 3. Formulario de Envío -->
+        <form id="chat-form" class="border-t border-gray-700 p-4 flex items-center">
+            <input 
+                type="text" 
+                id="chat-input"
+                placeholder="Escribe tu pregunta aquí..."
+                class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                autocomplete="off"
+                required
+            >
+            <button 
+                type="submit" 
+                id="send-button"
+                class="ml-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-5 rounded-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50">
+                Enviar
+            </button>
+        </form>
+    </div>
+
+    <!-- 4. Lógica de JavaScript -->
+    <script>
+        // --- Referencias a los elementos del DOM ---
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        // La URL de tu Back-End (API de FastAPI)
+        const apiUrl = 'http://127.0.0.1:8000/preguntar';
+
+        // --- Manejador del envío del formulario ---
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita que la página se recargue
+
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return; // No enviar mensajes vacíos
+
+            // 1. Mostrar el mensaje del usuario en el chat
+            addMessageToChat('user', userMessage);
+
+            // 2. Limpiar el input y deshabilitar el botón
+            chatInput.value = '';
+            sendButton.disabled = true;
+
+            // 3. Mostrar un indicador de "pensando"
+            const thinkingMessage = addMessageToChat('agent', 'Pensando...');
+            
+            try {
+                // 4. Enviar la pregunta al Back-End
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ texto: userMessage }) // Formato: {"texto": "..."}
+                });
+
+                if (!response.ok) {
+                    // Si el servidor da un error (ej. 500)
+                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+                }
+
+                // 5. Obtener la respuesta del JSON
+                const data = await response.json(); // Formato: {"respuesta": "..."}
+
+                // 6. Actualizar el mensaje "Pensando..." con la respuesta real
+                updateMessage(thinkingMessage, data.respuesta);
+
+            } catch (error) {
+                console.error("Error al contactar la API:", error);
+                // 7. Mostrar un mensaje de error en el chat
+                updateMessage(thinkingMessage, `Lo siento, ocurrió un error: ${error.message}`);
+            } finally {
+                // 8. Reactivar el botón de enviar
+                sendButton.disabled = false;
+                chatInput.focus(); // Poner el cursor de nuevo en el input
+            }
+        });
+
+        /**
+         * Añade un nuevo mensaje a la ventana del chat.
+         * @param {string} role - 'user' o 'agent'
+         * @param {string} text - El contenido del mensaje
+         * @returns {HTMLElement} El elemento del párrafo del mensaje creado
+         */
+        function addMessageToChat(role, text) {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'flex';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'rounded-lg p-3 chat-bubble';
+
+            let messageContent;
+
+            if (role === 'user') {
+                messageContainer.classList.add('justify-end');
+                bubble.classList.add('bg-indigo-600', 'text-white');
+                messageContent = document.createElement('p');
+                messageContent.textContent = text;
+            } else { // agent
+                messageContainer.classList.add('justify-start');
+                bubble.classList.add('bg-gray-700', 'text-white');
+                
+                const agentLabel = document.createElement('p');
+                agentLabel.className = 'font-bold text-indigo-300';
+                agentLabel.textContent = 'Agente AI';
+                
+                messageContent = document.createElement('p');
+                messageContent.textContent = text;
+                
+                bubble.appendChild(agentLabel);
+            }
+            
+            bubble.appendChild(messageContent);
+            messageContainer.appendChild(bubble);
+            chatWindow.appendChild(messageContainer);
+
+            // Scroll automático al fondo
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            // Devolvemos el párrafo del mensaje para poder editarlo (ej. "Pensando...")
+            return messageContent;
+        }
+
+        /**
+         * Actualiza el texto de un mensaje existente (usado para el "Pensando...").
+         * @param {HTMLElement} messageElement - El elemento <p> devuelto por addMessageToChat
+         * @param {string} newText - El nuevo texto para el mensaje
+         */
+        function updateMessage(messageElement, newText) {
+            messageElement.textContent = newText;
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Asegurar scroll de nuevo
+        }
+
+    </script>
+</body>
+</html>
+
