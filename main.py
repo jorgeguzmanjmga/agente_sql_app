@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, inspect # <-- AÑADIDO 'inspect'
 from langchain_community.utilities import SQLDatabase
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.agent_toolkits import create_sql_agent
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -56,7 +56,7 @@ crear_base_si_no_existe()
 # 2.2. Cargar la API Key de OpenAI
 print("Cargando clave de API...")
 load_dotenv()
-if not os.getenv("OPENAI_API_KEY"):
+if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("No se encontró OPENAI_API_KEY. Asegúrate de que tu .env existe.")
 
 # 2.3. Conectar a la base de datos (que ahora sabemos que existe)
@@ -65,8 +65,15 @@ engine = create_engine(f'sqlite:///{DB_FILE}')
 db = SQLDatabase(engine=engine)
 
 # 2.4. Inicializar el "Cerebro" (LLM)
-print("Inicializando el modelo de OpenAI (LLM)...")
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+print("Inicializando el modelo de IA...")
+if os.getenv("GOOGLE_API_KEY"):
+    print("Usando Google Gemini Pro (gratis)...")
+    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0) 
+else:
+    # Si no hay clave de Google, la app no puede funcionar.
+    print("ERROR CRÍTICO: No se encontró GOOGLE_API_KEY.")
+    raise ValueError("No se encontró GOOGLE_API_KEY. La aplicación no puede iniciar.")
+
 
 # 2.5. Crear el Agente SQL
 print("Creando el agente SQL...")
@@ -102,18 +109,65 @@ class Pregunta(BaseModel):
 
 class Respuesta(BaseModel):
     respuesta: str 
-
+    
 # --- 6. CREACIÓN DEL ENDPOINT (/preguntar) ---
+# Actualizado para ser EL ADAPTADOR DEFINITIVO (Maneja 3 formatos)
 @app.post("/preguntar", response_model=Respuesta)
 def preguntar(pregunta: Pregunta):
     print(f"\nRecibida pregunta: {pregunta.texto}")
     try:
-        resultado = agente.invoke(pregunta.texto)
-        print(f"Respuesta generada: {resultado['output']}")
-        return Respuesta(respuesta=resultado['output'])
+        # 1. Invocamos el agente
+        respuesta_agente = agente.invoke({"input": pregunta.texto})
+
+        # 2. Imprimimos el log para depurar
+        print(f"Respuesta generada (bruta): {respuesta_agente}")
+
+        # 3. ¡LÓGICA DE EXTRACCIÓN A PRUEBA DE BALAS!
+        
+        texto_respuesta = ""
+        
+        # Caso 1 y 3: La respuesta es un diccionario
+        if isinstance(respuesta_agente, dict):
+            if 'output' not in respuesta_agente:
+                raise ValueError("El diccionario del agente no tiene clave 'output'")
+            
+            valor_output = respuesta_agente['output']
+            
+            # Caso 3: El 'output' es una lista (Gemini anidado)
+            if isinstance(valor_output, list):
+                if len(valor_output) > 0 and 'text' in valor_output[0]:
+                    texto_respuesta = valor_output[0]['text']
+                else:
+                    raise ValueError("La lista 'output' está vacía o mal formada")
+            
+            # Caso 2: El 'output' es un string (Agente estándar)
+            elif isinstance(valor_output, str):
+                texto_respuesta = valor_output
+            
+            else:
+                raise ValueError(f"Tipo inesperado dentro de 'output': {type(valor_output)}")
+
+        # Caso 1: La respuesta es una lista (Gemini directo)
+        elif isinstance(respuesta_agente, list):
+            if len(respuesta_agente) > 0 and 'text' in respuesta_agente[0]:
+                texto_respuesta = respuesta_agente[0]['text']
+            else:
+                raise ValueError("La lista del agente está vacía o mal formada")
+        
+        # Caso desconocido
+        else:
+            raise ValueError(f"Formato de respuesta inesperado: {type(respuesta_agente)}")
+
+        # 4. Devolvemos la respuesta (ahora SÍ es un string)
+        print(f"Respuesta final enviada: {texto_respuesta}")
+        return Respuesta(respuesta=texto_respuesta)
+
     except Exception as e:
-        print(f"Error procesando la pregunta: {e}")
+        # Esto es un "salvavidas"
+        print(f"Error CRÍTICO al procesar la respuesta: {e}")
+        # Le decimos al front-end que algo salió mal
         raise HTTPException(status_code=500, detail=f"Error del agente: {e}")
+
 
 # --- 7. PUNTO DE ENTRADA (Opcional, bueno para pruebas) ---
 if __name__ == "__main__":
