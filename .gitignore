@@ -13,3 +13,6 @@ __pycache__/
 
 # Ignorar archivos de caché de VS Code
 .vscode/
+
+# Ignorar carpeta de documentación
+documentacion/
