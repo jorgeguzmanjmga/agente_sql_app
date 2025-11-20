@@ -16,3 +16,6 @@ __pycache__/
 
 # Ignorar carpeta de documentación
 documentacion/
+
+# ignorar la base demo
+demo_old.csv
