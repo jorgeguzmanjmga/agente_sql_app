@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full">
 <head>
-    <meta charset="UTF-M">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat con Agente SQL</title>
     <!-- 1. Cargar Tailwind CSS (para los estilos) -->
@@ -18,18 +18,48 @@
     <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl h-full max-h-[90vh] flex flex-col">
         
         <!-- Cabecera -->
-        <header class="border-b border-gray-700 p-4">
-            <h1 class="text-2xl font-bold text-center text-white">Agente Analista de Datos</h1>
-            <p class="text-sm text-center text-indigo-400">Pregúntame sobre la base de datos (ventas)</p>
+        <header class="border-b border-gray-700 p-4 bg-gray-800/50 backdrop-blur-sm">
+            <div class="flex items-center justify-center gap-2">
+                <span class="text-2xl">📊</span> 
+                <h1 class="text-xl md:text-2xl font-bold text-white tracking-wide">DataGuru: Retail Analytics</h1>
+            </div>
+            <p class="text-xs md:text-sm text-center text-indigo-400 mt-1">
+                Powered by <span class="font-semibold text-indigo-300">LangChain</span> & <span class="font-semibold text-indigo-300">Kaggle Data</span>
+            </p>
         </header>
 
         <!-- 2. Ventana de Chat (Aquí irán los mensajes) -->
         <div id="chat-window" class="flex-1 p-4 space-y-4 overflow-y-auto">
             <!-- Mensaje de bienvenida -->
-            <div class="flex justify-start">
-                <div class="bg-gray-700 rounded-lg p-3 chat-bubble">
-                    <p class="font-bold text-indigo-300">Agente AI</p>
-                    <p>¡Hola! Estoy conectado a la base de datos `ventas`. ¿Qué te gustaría saber?</p>
+            <div class="flex flex-col space-y-4">
+                <div class="flex justify-start">
+                    <div class="bg-gray-700 rounded-lg p-4 chat-bubble shadow-lg border border-gray-600">
+                        <p class="font-bold text-indigo-300 mb-1">🤖 DataGuru AI</p>
+                        <p class="mb-3">¡Hola! He analizado tus 5,000 registros de ventas. Puedo cruzar datos de sucursales, productos y fechas.</p>
+                        <p class="text-sm text-gray-400">Intenta una de estas consultas rápidas:</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 px-2">
+                    <button onclick="usarSugerencia('¿Cuál es la sucursal con mayores ingresos totales?')" 
+                        class="text-left text-sm bg-indigo-900/30 hover:bg-indigo-600 border border-indigo-700/50 text-indigo-100 py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]">
+                        🏢 Sucursal con más ingresos
+                    </button>
+                    
+                    <button onclick="usarSugerencia('¿Cuál es el método de pago más usado por los Miembros?')" 
+                        class="text-left text-sm bg-indigo-900/30 hover:bg-indigo-600 border border-indigo-700/50 text-indigo-100 py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]">
+                        💳 Pagos preferidos (Miembros)
+                    </button>
+
+                    <button onclick="usarSugerencia('¿Qué línea de producto tiene el rating promedio más bajo?')" 
+                        class="text-left text-sm bg-indigo-900/30 hover:bg-indigo-600 border border-indigo-700/50 text-indigo-100 py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]">
+                        ⭐ Peor rating por producto
+                    </button>
+                    
+                    <button onclick="usarSugerencia('Dames las ventas totales agrupadas por mes')" 
+                        class="text-left text-sm bg-indigo-900/30 hover:bg-indigo-600 border border-indigo-700/50 text-indigo-100 py-2 px-3 rounded-lg transition-all duration-200 hover:scale-[1.02]">
+                        📅 Tendencia mensual
+                    </button>
                 </div>
             </div>
             <!-- Los mensajes del chat se añadirán aquí -->
@@ -170,6 +200,26 @@
         function updateMessage(messageElement, newText) {
             messageElement.textContent = newText;
             chatWindow.scrollTop = chatWindow.scrollHeight; // Asegurar scroll de nuevo
+        }
+
+        /**
+         * Función para manejar el clic en los botones de sugerencia
+         * 1. Pone el texto en el input
+         * 2. Simula el clic en "Enviar"
+         */
+        function usarSugerencia(textoPregunta) {
+            const input = document.getElementById('chat-input');
+            const btn = document.getElementById('send-button');
+            
+            // Efecto visual: Escribir en el input
+            input.value = textoPregunta;
+            
+            // Enfocar el input (opcional, por si quieren editar)
+            input.focus();
+            
+            // Opcional: Disparar el envío automáticamente para "Efecto Mágico"
+            // Si prefieres que el usuario lo lea antes de enviar, comenta la siguiente línea:
+            btn.click(); 
         }
 
     </script>
