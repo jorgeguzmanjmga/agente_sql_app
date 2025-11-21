@@ -20,7 +20,7 @@
 
 ## 🚀 Descripción del Proyecto
 
-Esta aplicación full-stack simula el rol de un Analista de Datos Senior. Utiliza Modelos de Lenguaje (LLMs) para interpretar preguntas de negocio, transformarlas en sentencias SQL sintácticamente correctas, ejecutarlas sobre una base de datos real y explicar los resultados.
+Esta aplicación full-stack simula el rol de un Analista de Datos. Utiliza Modelos de Lenguaje (LLMs) para interpretar preguntas de negocio, transformarlas en sentencias SQL sintácticamente correctas, ejecutarlas sobre una base de datos real y explicar los resultados.
 
 **Características Clave:**
 * **RAG (Retrieval Augmented Generation):** Conecta GPT/Gemini con datos privados.
@@ -32,15 +32,15 @@ Esta aplicación full-stack simula el rol de un Analista de Datos Senior. Utiliz
 
 ## 🧠 Stack Tecnológico
 
-### Backend (La "Cocina")
+### Backend
 * **Python & FastAPI:** API REST de alto rendimiento.
 * **LangChain:** Orquestación del agente y cadenas de pensamiento (Chain of Thought).
 * **Google Gemini Pro:** El cerebro (LLM) detrás del razonamiento SQL.
 * **Pandas & SQLite:** Manejo de datos y motor SQL en memoria.
 
-### Frontend (El "Comedor")
-* **HTML5 & JavaScript (ES6+):** Sin frameworks pesados, puro rendimiento.
-* **Tailwind CSS:** Diseño moderno y adaptativo.
+### Frontend
+* **HTML5 & JavaScript (ES6+):** estructura y funcionamiento de la app.
+* **Tailwind CSS:** Diseño de la app.
 
 ---
 
